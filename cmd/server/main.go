@@ -28,6 +28,18 @@ func main() {
 
 	gamelogic.PrintServerHelp()
 
+	_, queue, err := pubsub.DeclareAndBind(
+		conn,
+		routing.ExchangePerilTopic,
+		routing.GameLogSlug,
+		routing.GameLogSlug+".*",
+		pubsub.SimpleQueueDurable,
+	)
+	if err != nil {
+		log.Printf("could not subscribe to pause: %v", err)
+	}
+	fmt.Printf("Queue %v is decalred and bound!\n", queue.Name)
+
 	for {
 		words := gamelogic.GetInput()
 		if len(words) == 0 {
