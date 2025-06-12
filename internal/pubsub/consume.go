@@ -1,6 +1,7 @@
 package pubsub
 
 import (
+	"encoding/json"
 	"fmt"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -18,7 +19,7 @@ func DeclareAndBind(
 	exchange,
 	queueName,
 	key string,
-	simpleQueueType SimpleQueueType, // an enum to represent "durable" or "transient"
+	simpleQueueType SimpleQueueType,
 ) (*amqp.Channel, amqp.Queue, error) {
 	ch, err := conn.Channel()
 	if err != nil {
@@ -46,4 +47,49 @@ func DeclareAndBind(
 		return nil, amqp.Queue{}, fmt.Errorf("could not bind queue: %v", err)
 	}
 	return ch, queue, nil
+}
+
+func SubscribeJSON[T any](
+	conn *amqp.Connection,
+	exchange,
+	queueName,
+	key string,
+	simgSimpleQueueType SimpleQueueType,
+	handler func(T),
+) error {
+	ch, queue, err := DeclareAndBind(
+		conn, exchange, queueName, key, simgSimpleQueueType,
+	)
+	if err != nil {
+		return fmt.Errorf("could not declare and bind queue: %v", err)
+	}
+	deliveryCh, err := ch.Consume(
+		queue.Name, // queue
+		"",         // consumer (auto-generated)
+		false,      // autoAck
+		false,      // exclusive
+		false,      // noLocal
+		false,      // noWait
+		nil,        // args
+	)
+	if err != nil {
+		return fmt.Errorf("could not consume message: %v", err)
+	}
+	go func() {
+		defer ch.Close()
+		for delivery := range deliveryCh {
+			var msg T
+			err := json.Unmarshal(delivery.Body, &msg)
+			if err != nil {
+				fmt.Printf("could not unmarshal message: %v\n", err)
+				return
+			}
+			handler(msg)
+			err = delivery.Ack(false)
+			if err != nil {
+				fmt.Printf("could not Ack: %v\n", err)
+			}
+		}
+	}()
+	return nil
 }
