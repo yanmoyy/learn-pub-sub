@@ -10,6 +10,7 @@ import (
 )
 
 func main() {
+	fmt.Println("Starting Peril server...")
 	const rabbitConnString = "amqp://guest:guest@localhost:5672/"
 
 	conn, err := ampq.Dial(rabbitConnString)
