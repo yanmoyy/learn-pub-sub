@@ -36,7 +36,7 @@ func main() {
 		pubsub.SimpleQueueDurable,
 	)
 	if err != nil {
-		log.Printf("could not subscribe to pause: %v", err)
+		log.Fatalf("could not subscribe to pause: %v", err)
 	}
 	fmt.Printf("Queue %v is decalred and bound!\n", queue.Name)
 
