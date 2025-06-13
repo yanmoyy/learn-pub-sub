@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/bootdotdev/learn-pub-sub-starter/internal/routing"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -39,7 +40,7 @@ func DeclareAndBind(
 		simpleQueueType != SimpleQueueDurable, // delete when unused
 		simpleQueueType != SimpleQueueDurable, // exclusive
 		false,                                 // no-wait
-		nil,                                   // arguments
+		amqp.Table{"x-dead-letter-exchange": routing.ExchangePerilDlx},
 	)
 	if err != nil {
 		return nil, amqp.Queue{}, err
